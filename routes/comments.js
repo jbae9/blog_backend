@@ -35,10 +35,8 @@ router.post("/comments/:postId", async (req, res) => {
     Comments.create({ postId, commentId, author, content, password },
         function(err, post){
             if (err) return res.status(400).send(err.message);
-            else res.status(200).json(post)
+            else res.status(201).json(post)
         });
-
-    // res.json({ comments: createdComments });
 });
 
 // 댓글 수정

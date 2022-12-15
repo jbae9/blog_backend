@@ -8,12 +8,9 @@ const Posts = require("../schemas/posts.js");
 router.get('/posts', async (req, res) => {
     Posts.find({},
         function(err, result){
-            if (err) res.status(400).send(err);
+            if (err) res.status(400).send(err.message);
             else res.send(result);
         }).select('postId author title content date').sort({date: 'desc'})
-
-    // Send status 200 (success) and send the JSON data goods
-    // res.json({ results })
 })
 
 // 게시글 상세 조회
@@ -47,10 +44,8 @@ router.post("/posts", async (req, res) => {
     Posts.create({ postId, title, author, content, password },
         function(err, post){
             if (err) return res.status(400).send(err.message);
-            else res.status(200).json(post)
+            else res.status(201).json(post)
         });
-
-    // res.json({ posts: createdPosts });
 });
 
 // 게시글 수정
@@ -71,7 +66,6 @@ router.put("/posts/:postId", async (req, res) => {
     } else {
     res.status(400).json({ success: false, errorMessage: "feedId가 존재하지 않습니다."});
     }
-    
 })
 
 // 게시글 삭제
