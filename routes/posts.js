@@ -52,8 +52,9 @@ router.post("/posts", async (req, res) => {
 router.put("/posts/:postId", async (req, res) => {
     const { postId } = req.params
     const editPost = req.body.content
+    const password = req.body.password
 
-    const existsPosts = await Posts.find({ postId: Number(postId) });
+    const existsPosts = await Posts.find({ postId: Number(postId), password: password });
 
     
     if (existsPosts.length) {
@@ -62,9 +63,8 @@ router.put("/posts/:postId", async (req, res) => {
         if(err) res.status(400).send(err.message);
         else res.send(post);
     });
-    // 
     } else {
-    res.status(400).json({ success: false, errorMessage: "feedId가 존재하지 않습니다."});
+        res.status(400).json({ success: false, errorMessage: "feedId 존재하지 않거나 패스워드가 틀렸습니다."});
     }
 })
 

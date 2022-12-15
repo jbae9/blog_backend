@@ -43,8 +43,9 @@ router.post("/comments/:postId", async (req, res) => {
 router.put("/comments/:commentId", async (req, res) => {
     const { commentId } = req.params
     const editPost = req.body.content
+    const password = req.body.password
 
-    const existsComments = await Comments.find({ commentId: Number(commentId) });
+    const existsComments = await Comments.find({ commentId: Number(commentId), password: password });
 
     if (existsComments.length) {
         Comments.updateOne({ commentId: Number(commentId) }, {$set: {content:editPost}},
@@ -53,7 +54,7 @@ router.put("/comments/:commentId", async (req, res) => {
             else res.send(post);
         });
     } else {
-        res.json({ success: false, errorMessage: "commentId가 존재하지 않습니다."});
+        res.json({ success: false, errorMessage: "commentId가 존재하지 않거나 패스워드가 틀렸습니다."});
     }
 })
 
@@ -70,7 +71,7 @@ router.delete("/comments/:commentId", async (req, res) => {
             else res.send(post);
         })
     } else {
-        res.json({ success: false, errorMessage: "feedId 존재하지 않거나 패스워드가 틀렸습니다."});
+        res.json({ success: false, errorMessage: "commentId가 존재하지 않거나 패스워드가 틀렸습니다."});
     }
 })
 
