@@ -2,14 +2,13 @@ const express = require('express');
 const app = express();
 const port = 8000;
 
-// Imports routes folder
-// const routeIndex = require('./routes/index.js')
+// Imports files in routes folder
 const routePosts = require('./routes/posts.js')
 const routeComments = require('./routes/comments.js')
 
-// Imports all files in schemas folder
+// Imports index.js files in schemas folder
 const connect = require("./schemas");
-// Execute all files in schemas folder
+// Connect to Mongoose defined in index.js
 connect();
 
 app.use(express.json())

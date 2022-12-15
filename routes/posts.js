@@ -10,7 +10,7 @@ router.get('/posts', async (req, res) => {
         function(err, result){
             if (err) res.status(400).send(err);
             else res.send(result);
-        }).select('postId author title content date')
+        }).select('postId author title content date').sort({date: 'desc'})
 
     // Send status 200 (success) and send the JSON data goods
     // res.json({ results })
@@ -22,9 +22,9 @@ router.get("/posts/:postId", (req, res) => {
 
     Posts.find({ postId: postId },
         function (err, post) {
-            if (err) return res.status(400).send(err);
+            if (err) return res.status(400).send(err.message);
             // Return response
-            res.status(200).json(post)
+            else res.status(200).json(post)
         }).select('postId author title content date')
 })
 
@@ -46,8 +46,8 @@ router.post("/posts", async (req, res) => {
     // Create a good if there is no good corresponding to the goodsId
     Posts.create({ postId, title, author, content, password },
         function(err, post){
-            if (err) return res.status(400).send(err);
-            res.status(200).json(post)
+            if (err) return res.status(400).send(err.message);
+            else res.status(200).json(post)
         });
 
     // res.json({ posts: createdPosts });
@@ -60,16 +60,18 @@ router.put("/posts/:postId", async (req, res) => {
 
     const existsPosts = await Posts.find({ postId: Number(postId) });
 
+    
     if (existsPosts.length) {
-        Posts.updateOne({ postId: Number(postId) }, {$set: {content:editPost}},
-        function(err, post){
-            if(err) res.status(400).send(err);
-            else res.send(post);
-        });
-        // 
+    Posts.updateOne({ postId: Number(postId) }, {$set: {content:editPost}},
+    function(err, post){
+        if(err) res.status(400).send(err.message);
+        else res.send(post);
+    });
+    // 
     } else {
-        res.json({ success: false, errorMessage: "feedId가 존재하지 않습니다."});
+    res.status(400).json({ success: false, errorMessage: "feedId가 존재하지 않습니다."});
     }
+    
 })
 
 // 게시글 삭제

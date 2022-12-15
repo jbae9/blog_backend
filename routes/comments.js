@@ -12,7 +12,7 @@ router.get('/comments/:postId', (req,res) => {
             if (err) return res.status(400).send(err);
             // Return response
             res.status(200).json(post)
-        }).select('commentId author title content date')
+        }).select('commentId author title content date').sort({date: 'desc'})
 })
 
 // 해당되는 게시물에 댓글 작성
@@ -32,9 +32,13 @@ router.post("/comments/:postId", async (req, res) => {
     }
 
     // Create a good if there is no good corresponding to the goodsId
-    const createdComments = await Comments.create({ postId, commentId, author, content, password });
+    Comments.create({ postId, commentId, author, content, password },
+        function(err, post){
+            if (err) return res.status(400).send(err.message);
+            else res.status(200).json(post)
+        });
 
-    res.json({ comments: createdComments });
+    // res.json({ comments: createdComments });
 });
 
 // 댓글 수정
@@ -47,10 +51,9 @@ router.put("/comments/:commentId", async (req, res) => {
     if (existsComments.length) {
         Comments.updateOne({ commentId: Number(commentId) }, {$set: {content:editPost}},
         function(err, post){
-            if(err) res.status(400).send(err);
+            if(err) res.status(400).send(err.message);
             else res.send(post);
         });
-        // 
     } else {
         res.json({ success: false, errorMessage: "commentId가 존재하지 않습니다."});
     }
@@ -65,7 +68,7 @@ router.delete("/comments/:commentId", async (req, res) => {
     if (existsPosts.length) {
         Comments.deleteOne({ commentId: Number(commentId), password: password }, 
         function(err,post){
-            if(err) res.status(400).send(err);
+            if(err) res.status(400).send(err.message);
             else res.send(post);
         })
     } else {
