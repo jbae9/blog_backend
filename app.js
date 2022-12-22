@@ -2,18 +2,25 @@ const express = require('express');
 const app = express();
 const port = 8000;
 
+const cookieParser = require('cookie-parser');
+
 // Imports files in routes folder
 const routePosts = require('./routes/posts.js')
 const routeComments = require('./routes/comments.js')
+const routeSignup = require('./routes/users.js')
 
-// Imports index.js files in schemas folder
-const connect = require("./schemas");
-// Connect to Mongoose defined in index.js
-connect();
+const router = require('./routes/posts.js');
 
+
+// Body parser middleware
 app.use(express.json())
 
-app.use("/api", [routePosts, routeComments])
+// Cookie parser
+app.use(cookieParser())
+
+app.use("/api", express.urlencoded({extended: false}), [routePosts, routeComments, routeSignup])
+
+app.use(express.static("assets"));
 
 // Opens the express server
 app.listen(port, () => {

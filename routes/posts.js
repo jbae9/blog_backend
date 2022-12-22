@@ -1,51 +1,68 @@
 const express = require("express");
-const { exists } = require("../schemas/posts.js");
+const jwt = require("jsonwebtoken")
+
+const { exists } = require("../models/posts.js");
 const router = express.Router();
 
-const Posts = require("../schemas/posts.js");
+const authMiddleware = require("../middlewares/auth-middleware.js")
+const db = require("../models")
+const Posts = db.Posts
+const Users = db.Users
 
 // 게시글 전체 조회
 router.get('/posts', async (req, res) => {
-    Posts.find({},
-        function(err, result){
-            if (err) res.status(400).send(err.message);
-            else res.send(result);
-        }).select('postId author title content date').sort({date: 'desc'})
+    Posts.findAll({
+        attributes: ['postId', 'content'],
+        include: [{
+            model: Users,
+            attributes: ['nickname']
+        }]
+    })
+    .then( post =>
+        res.status(200).send(post)
+    )
+    .catch(
+        error => {
+            res.status(400).send(error)
+    })
 })
 
 // 게시글 상세 조회
 router.get("/posts/:postId", (req, res) => {
     const { postId } = req.params // When /posts/1 is called, returns '1'
 
-    Posts.find({ postId: postId },
-        function (err, post) {
-            if (err) return res.status(400).send(err.message);
-            // Return response
-            else res.status(200).json(post)
-        }).select('postId author title content date')
+    Posts.findAll({
+        where: {postId},
+        attributes: ['postId', 'content'],
+        include: [{
+            model: Users,
+            attributes: ['nickname']
+        }]
+    })
+    .then( post =>
+        res.status(200).send(post)
+    )
+    .catch(
+        error => {
+            res.status(400).send(error)
+    })
 })
 
 // 게시글 작성 -------------------- NEEDS PROPER ERROR HANDLING
-router.post("/posts", async (req, res) => {
+router.post("/posts", authMiddleware, async (req, res) => {
     // Get data in body
-    const { postId, title, author, content, password } = req.body;
+    const { content, password } = req.body;
 
-    // Finds goods corresponding to goodsId
-    // Finish executing this code before moving on with 'await'
-    const posts = await Posts.find({ postId });
+    const {user} = res.locals
+    const userId = user.dataValues.userId
 
-    // If goods.length is bigger than 0, it is true
-    // aka run this if statement if there is a good corresponding to the goodsId
-    if (posts.length) {
-        return res.status(400).json({ success: false, errorMessage: "이미 있는 feedId입니다." });
+    // Create post
+    try {
+        const post = await Posts.create({ userId, content, password })
+        res.status(201).json(post)
+    } catch (error) {
+        res.status(400).send(error)
     }
-
-    // Create a good if there is no good corresponding to the goodsId
-    Posts.create({ postId, title, author, content, password },
-        function(err, post){
-            if (err) return res.status(400).send(err.message);
-            else res.status(201).json(post)
-        });
 });
 
 // 게시글 수정
@@ -54,34 +71,40 @@ router.put("/posts/:postId", async (req, res) => {
     const editPost = req.body.content
     const password = req.body.password
 
-    const existsPosts = await Posts.find({ postId: Number(postId), password: password });
+    const existsPosts = await Posts.findAll({ where: {postId: Number(postId), password: password }});
 
+    console.log(existsPosts)
     
-    if (existsPosts.length) {
-    Posts.updateOne({ postId: Number(postId) }, {$set: {content:editPost}},
-    function(err, post){
-        if(err) res.status(400).send(err.message);
-        else res.send(post);
-    });
+    if (existsPosts.length != 0) {
+        // ------------- Return 값 이상함 -----------------
+        Posts.update({content: editPost},
+            {
+                where: {postId: Number(postId)},
+                attributes: ['postId', 'content'],
+                include: [{
+                    model: Users,
+                    attributes: ['nickname']
+                }]
+            })
+        .then(post => res.status(200).send({success: true}))
+        .catch(error => res.status(400).send(error))
     } else {
-        res.status(400).json({ success: false, errorMessage: "feedId 존재하지 않거나 패스워드가 틀렸습니다."});
+        res.status(400).json({ success: false, errorMessage: "postId가 존재하지 않거나 패스워드가 틀렸습니다."});
     }
 })
 
 // 게시글 삭제
-router.delete("/posts/:postId", async (req, res) => {
+router.delete("/posts/:postId", authMiddleware, async (req, res) => {
     const { postId } = req.params
     const password = req.body.password
+   
+    const existsPost = await Posts.findAll({ where: {postId: Number(postId), password: password}});
 
-    const existsPosts = await Posts.find({ postId: Number(postId), password: password });
-    if (existsPosts.length) {
-        Posts.deleteOne({ postId: Number(postId), password: password }, 
-        function(err,post){
-            if(err) res.status(400).send(err);
-            else res.send(post);
-        })
+    if (existsPost.length != 0) {
+        await Posts.destroy({where: {postId: Number(postId), password: password}})
+        res.status(200).send({success: true})
     } else {
-        res.json({ success: false, errorMessage: "feedId 존재하지 않거나 패스워드가 틀렸습니다."});
+        res.json({ success: false, errorMessage: "postId 존재하지 않거나 패스워드가 틀렸습니다."});
     }
 })
 
